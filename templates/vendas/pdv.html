@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt-br" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loja JBS - Frente de Caixa (PDV)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 h-screen overflow-hidden flex flex-col">
+
+    <!-- Header / Barra de Status -->
+    <header class="bg-gray-800 border-b border-gray-700 px-6 py-3 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <h1 class="text-xl font-bold text-emerald-400 tracking-wider">LOJA JBS</h1>
+            <span class="bg-emerald-500/10 text-emerald-400 text-xs px-2.5 py-1 rounded-full font-medium border border-emerald-500/20">
+                PDV ATIVO
+            </span>
+        </div>
+        
+        <div class="flex items-center gap-6 text-sm">
+            {% if caixa %}
+                <div>Caixa: <span class="font-semibold text-emerald-400">#{{ caixa.id }}</span></div>
+                <div>Gaveta: <span class="font-semibold text-emerald-400">R$ {{ caixa.saldo_atual }}</span></div>
+            {% else %}
+                <span class="text-rose-400 font-bold">NENHUM CAIXA ABERTO</span>
+            {% endif %}
+            <div>Operador: <span class="font-semibold text-gray-200">{{ request.user.username }}</span></div>
+        </div>
+    </header>
+
+    {% if not caixa %}
+    <div class="flex-1 flex flex-col items-center justify-center bg-gray-900 p-6">
+        <div class="bg-gray-800 border border-gray-700 p-8 rounded-xl max-w-md w-full text-center">
+            <h2 class="text-xl font-bold text-rose-400 mb-2">Caixa Fechado</h2>
+            <p class="text-gray-400 text-sm mb-6">Abre o caixa no painel administrativo para iniciar as vendas no PDV.</p>
+            <a href="/admin/caixa/caixa/" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-6 py-2.5 rounded-lg transition">
+                Ir para o Painel de Caixa
+            </a>
+        </div>
+    </div>
+    {% else %}
+
+    <!-- Main Content (2 Colunas) -->
+    <main class="flex-1 flex overflow-hidden">
+
+        <!-- Coluna Esquerda: Busca e Grid de Produtos -->
+        <section class="w-2/3 border-r border-gray-800 p-6 flex flex-col gap-4 overflow-y-auto">
+            <!-- Busca por Código de Barras / Nome -->
+            <div class="relative">
+                <input type="text" id="busca-produto" placeholder="Buscar por código de barras ou nome do produto..." 
+                       class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-emerald-500">
+            </div>
+
+            <!-- Grid de Card de Produtos -->
+            <div class="grid grid-cols-3 gap-4">
+                {% for prod in produtos %}
+                <div onclick="adicionarAoCarrinho({{ prod.id }}, '{{ prod.nome }}', {{ prod.preco_venda }}, {{ prod.quantidade_estoque }})"
+                     class="bg-gray-800 hover:bg-gray-750 border border-gray-700/60 hover:border-emerald-500/50 p-4 rounded-xl cursor-pointer transition flex flex-col justify-between h-32 select-none">
+                    <div>
+                        <span class="text-xs text-gray-400 block mb-1">{{ prod.codigo_barras }}</span>
+                        <h3 class="font-medium text-gray-100 line-clamp-2 leading-snug">{{ prod.nome }}</h3>
+                    </div>
+                    <div class="flex justify-between items-end mt-2">
+                        <span class="text-xs text-gray-400">Estoque: {{ prod.quantidade_estoque }}</span>
+                        <span class="text-lg font-bold text-emerald-400">R$ {{ prod.preco_venda }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- Coluna Direita: Carrinho e Finalização -->
+        <section class="w-1/3 bg-gray-800/40 p-6 flex flex-col justify-between">
+            <div>
+                <h2 class="text-lg font-bold text-gray-200 mb-4 pb-2 border-b border-gray-700 flex justify-between">
+                    <span>Carrinho de Compras</span>
+                    <span id="qtd-itens" class="text-sm font-normal text-gray-400">0 itens</span>
+                </h2>
+
+                <!-- Lista de Itens do Carrinho -->
+                <div id="carrinho-lista" class="space-y-3 max-h-[380px] overflow-y-auto pr-1">
+                    <p id="carrinho-vazio" class="text-gray-500 text-center py-8 text-sm">Nenhum produto adicionado.</p>
+                </div>
+            </div>
+
+            <!-- Formulário de Fechamento -->
+            <div class="border-t border-gray-700 pt-4 mt-4 space-y-4">
+                <!-- Vendedor -->
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1">Vendedor Responsável</label>
+                    <select id="vendedor-select" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200">
+                        {% for v in vendedores %}
+                        <option value="{{ v.id }}">{{ v.user.get_full_name|default:v.user.username }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Forma de Pagamento -->
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1">Forma de Pagamento</label>
+                    <select id="pagamento-select" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200">
+                        {% for key, val in formas_pagamento %}
+                        <option value="{{ key }}">{{ val }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Total e Botão Finalizar -->
+                <div class="pt-2">
+                    <div class="flex justify-between items-baseline mb-4">
+                        <span class="text-gray-400 text-sm">TOTAL A PAGAR</span>
+                        <span id="total-val" class="text-3xl font-extrabold text-emerald-400">R$ 0,00</span>
+                    </div>
+
+                    <button onclick="finalizarVenda()" 
+                            class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-emerald-900/20 active:scale-[0.98]">
+                        FINALIZAR VENDA (F9)
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+    {% endif %}
+
+    <!-- Script JS do Carrinho do PDV -->
+    <script>
+        let carrinho = [];
+        const caixaId = "{{ caixa.id }}";
+
+        function adicionarAoCarrinho(id, nome, preco, estoqueMax) {
+            const item = carrinho.find(i => i.produto_id === id);
+            if (item) {
+                if (item.quantidade < estoqueMax) {
+                    item.quantidade++;
+                } else {
+                    alert("Estoque máximo atingido para este item!");
+                }
+            } else {
+                carrinho.push({ produto_id: id, nome, preco, quantidade: 1, estoqueMax });
+            }
+            renderizarCarrinho();
+        }
+
+        function removerDoCarrinho(id) {
+            carrinho = carrinho.filter(i => i.produto_id !== id);
+            renderizarCarrinho();
+        }
+
+        function renderizarCarrinho() {
+            const container = document.getElementById('carrinho-lista');
+            const totalEl = document.getElementById('total-val');
+            const qtdEl = document.getElementById('qtd-itens');
+
+            if (carrinho.length === 0) {
+                container.innerHTML = '<p id="carrinho-vazio" class="text-gray-500 text-center py-8 text-sm">Nenhum produto adicionado.</p>';
+                totalEl.innerText = 'R$ 0,00';
+                qtdEl.innerText = '0 itens';
+                return;
+            }
+
+            let total = 0;
+            let totalQtd = 0;
+            container.innerHTML = '';
+
+            carrinho.forEach(i => {
+                const subtotal = i.preco * i.quantidade;
+                total += subtotal;
+                totalQtd += i.quantidade;
+
+                container.innerHTML += `
+                    <div class="flex justify-between items-center bg-gray-800/80 p-3 rounded-lg border border-gray-700/50">
+                        <div class="flex-1">
+                            <h4 class="font-medium text-sm text-gray-200">${i.nome}</h4>
+                            <span class="text-xs text-gray-400">${i.quantidade}x R$ ${i.preco.toFixed(2)}</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="font-bold text-sm text-emerald-400">R$ ${subtotal.toFixed(2)}</span>
+                            <button onclick="removerDoCarrinho(${i.produto_id})" class="text-rose-400 hover:text-rose-300 text-xs font-bold px-1">✕</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            totalEl.innerText = `R$ ${total.toFixed(2)}`;
+            qtdEl.innerText = `${totalQtd} itens`;
+        }
+
+        async function finalizarVenda() {
+            if (carrinho.length === 0) {
+                alert("Adicione pelo menos um item ao carrinho!");
+                return;
+            }
+
+            const payload = {
+                caixa_id: parseInt(caixaId),
+                vendedor_id: parseInt(document.getElementById('vendedor-select').value),
+                forma_pagamento: document.getElementById('pagamento-select').value,
+                itens: carrinho.map(i => ({ produto_id: i.produto_id, quantidade: i.quantidade }))
+            };
+
+            const response = await fetch('/vendas/api/processar/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                alert(`Venda #${result.venda_id} realizada com sucesso!`);
+                window.location.reload();
+            } else {
+                alert(`Erro ao processar venda: ${result.error}`);
+            }
+        }
+    </script>
+</body>
+</html>
