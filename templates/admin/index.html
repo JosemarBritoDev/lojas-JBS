@@ -1,0 +1,121 @@
+{% extends "admin/index.html" %}
+{% load i18n static %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header Operacional Superior -->
+    <div class="bg-gray-800 border border-gray-700/80 rounded-xl p-4 flex flex-wrap justify-between items-center text-sm shadow-md">
+        <div class="flex items-center gap-3">
+            <span class="text-xl">🏪</span>
+            <span class="font-bold text-gray-100 text-base">LOJA JBS</span>
+            <span class="text-gray-500">|</span>
+            <span class="text-gray-300">Caixa:</span>
+            <span class="font-semibold text-emerald-400">ABERTO</span>
+        </div>
+        <div class="flex items-center gap-4">
+            <a href="/vendas/pdv/" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-1.5 rounded-lg transition text-xs flex items-center gap-1">
+                🛒 Ir para o PDV
+            </a>
+            <a href="/dashboard/" class="bg-gray-700 hover:bg-gray-600 text-gray-200 px-3 py-1.5 rounded-lg transition text-xs border border-gray-600">
+                📊 Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Grid de Módulos Operacionais -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+
+        <!-- Card 1: BALCÃO / PDV -->
+        <div class="bg-gray-800 border border-gray-700/80 hover:border-emerald-500/50 p-5 rounded-xl transition shadow-lg flex flex-col justify-between">
+            <div>
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-2xl">🛒</span>
+                    <h3 class="font-bold text-gray-100 tracking-wide text-base">BALCÃO / PDV</h3>
+                </div>
+                <p class="text-xs text-gray-400 mb-4">Abertura de novas vendas e frente de caixa rápida.</p>
+            </div>
+            <a href="/vendas/pdv/" class="w-full text-center bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2 rounded-lg transition text-xs block">
+                [ + Abrir PDV ]
+            </a>
+        </div>
+
+        <!-- Card 2: PRODUTOS -->
+        <div class="bg-gray-800 border border-gray-700/80 hover:border-amber-500/50 p-5 rounded-xl transition shadow-lg flex flex-col justify-between">
+            <div>
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-2xl">📦</span>
+                    <h3 class="font-bold text-gray-100 tracking-wide text-base">PRODUTOS</h3>
+                </div>
+                <p class="text-xs text-gray-400 mb-4">Cadastro de catálogo, controle de estoque e preços.</p>
+            </div>
+            <a href="/admin/produtos/produto/" class="w-full text-center bg-gray-700 hover:bg-gray-600 text-amber-400 font-semibold py-2 rounded-lg transition text-xs border border-amber-500/30 block">
+                [ Ver Estoque ]
+            </a>
+        </div>
+
+        <!-- Card 3: CAIXA -->
+        <div class="bg-gray-800 border border-gray-700/80 hover:border-emerald-500/50 p-5 rounded-xl transition shadow-lg flex flex-col justify-between">
+            <div>
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-2xl">💵</span>
+                    <h3 class="font-bold text-gray-100 tracking-wide text-base">CAIXA</h3>
+                </div>
+                <p class="text-xs text-gray-400 mb-4">Abertura/fechamento, sangria e histórico de gaveta.</p>
+            </div>
+            <a href="/admin/caixa/caixa/" class="w-full text-center bg-gray-700 hover:bg-gray-600 text-emerald-400 font-semibold py-2 rounded-lg transition text-xs border border-emerald-500/30 block">
+                [ Gerenciar Caixa ]
+            </a>
+        </div>
+
+        <!-- Card 4: COMPRAS -->
+        <div class="bg-gray-800 border border-gray-700/80 hover:border-rose-500/50 p-5 rounded-xl transition shadow-lg flex flex-col justify-between">
+            <div>
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-2xl">📥</span>
+                    <h3 class="font-bold text-gray-100 tracking-wide text-base">COMPRAS</h3>
+                </div>
+                <p class="text-xs text-gray-400 mb-4">Entrada de mercadorias, fornecedores e notas.</p>
+            </div>
+            <a href="/admin/compras/pedidocompra/" class="w-full text-center bg-gray-700 hover:bg-gray-600 text-rose-400 font-semibold py-2 rounded-lg transition text-xs border border-rose-500/30 block">
+                [ Registrar Compras ]
+            </a>
+        </div>
+
+        <!-- Card 5: FINANCEIRO -->
+        <div class="bg-gray-800 border border-gray-700/80 hover:border-blue-500/50 p-5 rounded-xl transition shadow-lg flex flex-col justify-between">
+            <div>
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-2xl">📊</span>
+                    <h3 class="font-bold text-gray-100 tracking-wide text-base">FINANCEIRO</h3>
+                </div>
+                <p class="text-xs text-gray-400 mb-4">Contas a pagar/receber e DRE demonstrativo.</p>
+            </div>
+            <a href="/dashboard/" class="w-full text-center bg-gray-700 hover:bg-gray-600 text-blue-400 font-semibold py-2 rounded-lg transition text-xs border border-blue-500/30 block">
+                [ Ver Relatórios ]
+            </a>
+        </div>
+
+        <!-- Card 6: CLIENTES -->
+        <div class="bg-gray-800 border border-gray-700/80 hover:border-purple-500/50 p-5 rounded-xl transition shadow-lg flex flex-col justify-between">
+            <div>
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-2xl">👥</span>
+                    <h3 class="font-bold text-gray-100 tracking-wide text-base">CLIENTES</h3>
+                </div>
+                <p class="text-xs text-gray-400 mb-4">Cadastro de clientes e gestão de contas do Fiado.</p>
+            </div>
+            <a href="/admin/clientes/cliente/" class="w-full text-center bg-gray-700 hover:bg-gray-600 text-purple-400 font-semibold py-2 rounded-lg transition text-xs border border-purple-500/30 block">
+                [ Gerenciar Clientes ]
+            </a>
+        </div>
+
+    </div>
+
+    <!-- Mantém a Lista Padrão das Aplicações do Django abaixo do Grid -->
+    <div class="mt-8">
+        {{ block.super }}
+    </div>
+
+</div>
+{% endblock %}

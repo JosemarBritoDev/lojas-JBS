@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt-br" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loja JBS - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col">
+
+    <!-- Header Navigation -->
+    <!-- Header / Barra de Status -->
+    <header class="bg-gray-800 border-b border-gray-700 px-6 py-3 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <h1 class="text-xl font-bold text-emerald-400 tracking-wider">LOJA JBS</h1>
+            <span class="bg-emerald-500/10 text-emerald-400 text-xs px-2.5 py-1 rounded-full font-medium border border-emerald-500/20">
+                PDV ATIVO
+            </span>
+        </div>
+        
+        <div class="flex items-center gap-6 text-sm">
+            {% if caixa %}
+                <div>Caixa: <span class="font-semibold text-emerald-400">#{{ caixa.id }}</span></div>
+                <div>Gaveta: <span class="font-semibold text-emerald-400">R$ {{ caixa.saldo_atual }}</span></div>
+            {% else %}
+                <span class="text-rose-400 font-bold">NENHUM CAIXA ABERTO</span>
+            {% endif %}
+            <div>Operador: <span class="font-semibold text-gray-200">{{ request.user.username }}</span></div>
+            
+            <!-- Botão de Sair/Voltar ao Dashboard da Gerência -->
+            <a href="/dashboard/" class="bg-gray-700 hover:bg-gray-600 text-gray-200 text-xs px-3 py-1.5 rounded-lg border border-gray-600 transition">
+                ← Painel / Dashboard
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-6 space-y-6 max-w-7xl mx-auto w-full">
+        
+        <!-- Cards de Métricas Clicáveis -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            
+            <!-- Card 1: Vendas Hoje -->
+            <a href="/dashboard/detalhes/?filtro=vendas_hoje" 
+               class="bg-gray-800 hover:bg-gray-750 border border-gray-700 hover:border-emerald-500/50 p-5 rounded-xl transition cursor-pointer group shadow-lg">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-gray-400 group-hover:text-emerald-400 font-semibold uppercase transition">Vendas Hoje</span>
+                    <span class="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20">Ver Lista ➔</span>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-100 mt-2">{{ total_vendas_hoje }}</h3>
+            </a>
+
+            <!-- Card 2: Faturamento Hoje -->
+            <a href="/dashboard/detalhes/?filtro=faturamento_hoje" 
+               class="bg-gray-800 hover:bg-gray-750 border border-gray-700 hover:border-emerald-500/50 p-5 rounded-xl transition cursor-pointer group shadow-lg">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-gray-400 group-hover:text-emerald-400 font-semibold uppercase transition">Faturamento Hoje</span>
+                    <span class="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20">Detalhes ➔</span>
+                </div>
+                <h3 class="text-2xl font-bold text-emerald-400 mt-2">R$ {{ faturamento_hoje }}</h3>
+            </a>
+
+            <!-- Card 3: Fiado / Total a Receber -->
+            <a href="/dashboard/detalhes/?filtro=fiado" 
+               class="bg-gray-800 hover:bg-gray-750 border border-gray-700 hover:border-amber-500/50 p-5 rounded-xl transition cursor-pointer group shadow-lg">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-gray-400 group-hover:text-amber-400 font-semibold uppercase transition">A Receber (Fiado)</span>
+                    <span class="text-xs bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded border border-amber-500/20">Cobranças ➔</span>
+                </div>
+                <h3 class="text-2xl font-bold text-amber-400 mt-2">R$ {{ total_fiado }}</h3>
+            </a>
+
+            <!-- Card 4: Clientes -->
+            <a href="/dashboard/detalhes/?filtro=clientes" 
+               class="bg-gray-800 hover:bg-gray-750 border border-gray-700 hover:border-blue-500/50 p-5 rounded-xl transition cursor-pointer group shadow-lg">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-gray-400 group-hover:text-blue-400 font-semibold uppercase transition">Clientes Ativos</span>
+                    <span class="text-xs bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded border border-blue-500/20">Ver Todos ➔</span>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-100 mt-2">{{ total_clientes }}</h3>
+            </a>
+        </div>
+
+        <!-- Seção do Gráfico e Últimas Vendas -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Gráfico de Vendas (2 Colunas) -->
+            <div class="lg:col-span-2 bg-gray-800 border border-gray-700 p-5 rounded-xl">
+                <h2 class="text-base font-bold text-gray-200 mb-4">Faturamento dos Últimos 7 Dias</h2>
+                <div class="h-64">
+                    <canvas id="graficoVendas"></canvas>
+                </div>
+            </div>
+
+            <!-- Tabela de Últimas Vendas (1 Coluna) -->
+            <div class="bg-gray-800 border border-gray-700 p-5 rounded-xl flex flex-col justify-between">
+                <div>
+                    <h2 class="text-base font-bold text-gray-200 mb-4">Últimas Vendas</h2>
+                    <div class="space-y-3">
+                        {% for v in ultimas_vendas %}
+                        <div class="flex justify-between items-center text-sm border-b border-gray-700/60 pb-2">
+                            <div>
+                                <p class="font-medium text-gray-200">Venda #{{ v.id }}</p>
+                                <span class="text-xs text-gray-400">{{ v.cliente.nome|default:"Cliente Avulso" }}</span>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold text-emerald-400">R$ {{ v.valor_total }}</p>
+                                <span class="text-xs text-gray-400 uppercase">{{ v.get_forma_pagamento_display }}</span>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <p class="text-gray-500 text-sm text-center py-4">Nenhuma venda registrada.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Renderização do Chart.js -->
+    <script>
+        const ctx = document.getElementById('graficoVendas').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ labels_grafico|safe }},
+                datasets: [{
+                    label: 'Faturamento (R$)',
+                    data: {{ dados_grafico|safe }},
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { color: '#9ca3af' }, grid: { display: false } },
+                    y: { ticks: { color: '#9ca3af' }, grid: { color: '#374151' } }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

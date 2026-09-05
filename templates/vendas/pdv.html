@@ -32,8 +32,8 @@
     <div class="flex-1 flex flex-col items-center justify-center bg-gray-900 p-6">
         <div class="bg-gray-800 border border-gray-700 p-8 rounded-xl max-w-md w-full text-center">
             <h2 class="text-xl font-bold text-rose-400 mb-2">Caixa Fechado</h2>
-            <p class="text-gray-400 text-sm mb-6">Abre o caixa no painel administrativo para iniciar as vendas no PDV.</p>
-            <a href="/admin/caixa/caixa/" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-6 py-2.5 rounded-lg transition">
+            <p class="text-gray-400 text-sm mb-6">Abra o caixa no painel administrativo para iniciar as vendas no PDV.</p>
+            <a href="/admin/caixa/caixa/" class="inline-block bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-6 py-2.5 rounded-lg transition">
                 Ir para o Painel de Caixa
             </a>
         </div>
@@ -54,8 +54,8 @@
             <!-- Grid de Card de Produtos -->
             <div class="grid grid-cols-3 gap-4">
                 {% for prod in produtos %}
-                <div onclick="adicionarAoCarrinho({{ prod.id }}, '{{ prod.nome }}', {{ prod.preco_venda }}, {{ prod.quantidade_estoque }})"
-                     class="bg-gray-800 hover:bg-gray-750 border border-gray-700/60 hover:border-emerald-500/50 p-4 rounded-xl cursor-pointer transition flex flex-col justify-between h-32 select-none">
+                <div onclick="adicionarAoCarrinho({{ prod.id }}, '{{ prod.nome|escapejs }}', parseFloat('{{ prod.preco_venda|stringformat:'.2f' }}'), {{ prod.quantidade_estoque }})"
+                     class="bg-gray-800 hover:bg-gray-700 border border-gray-700/60 hover:border-emerald-500/50 p-4 rounded-xl cursor-pointer transition flex flex-col justify-between h-32 select-none">
                     <div>
                         <span class="text-xs text-gray-400 block mb-1">{{ prod.codigo_barras }}</span>
                         <h3 class="font-medium text-gray-100 line-clamp-2 leading-snug">{{ prod.nome }}</h3>
@@ -78,16 +78,27 @@
                 </h2>
 
                 <!-- Lista de Itens do Carrinho -->
-                <div id="carrinho-lista" class="space-y-3 max-h-[380px] overflow-y-auto pr-1">
+                <div id="carrinho-lista" class="space-y-3 max-h-[320px] overflow-y-auto pr-1">
                     <p id="carrinho-vazio" class="text-gray-500 text-center py-8 text-sm">Nenhum produto adicionado.</p>
                 </div>
             </div>
 
             <!-- Formulário de Fechamento -->
-            <div class="border-t border-gray-700 pt-4 mt-4 space-y-4">
+            <div class="border-t border-gray-700 pt-3 space-y-3">
+                <!-- Cliente -->
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1" for="cliente-select">Cliente</label>
+                    <select id="cliente-select" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200">
+                        <option value="">-- Cliente Avulso / Consumidor Final --</option>
+                        {% for c in clientes %}
+                        <option value="{{ c.id }}">{{ c.nome }} ({{ c.cpf_cnpj }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
                 <!-- Vendedor -->
                 <div>
-                    <label class="block text-xs font-medium text-gray-400 mb-1">Vendedor Responsável</label>
+                    <label class="block text-xs font-medium text-gray-400 mb-1" for="vendedor-select">Vendedor Responsável</label>
                     <select id="vendedor-select" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200">
                         {% for v in vendedores %}
                         <option value="{{ v.id }}">{{ v.user.get_full_name|default:v.user.username }}</option>
@@ -97,7 +108,7 @@
 
                 <!-- Forma de Pagamento -->
                 <div>
-                    <label class="block text-xs font-medium text-gray-400 mb-1">Forma de Pagamento</label>
+                    <label class="block text-xs font-medium text-gray-400 mb-1" for="pagamento-select">Forma de Pagamento</label>
                     <select id="pagamento-select" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200">
                         {% for key, val in formas_pagamento %}
                         <option value="{{ key }}">{{ val }}</option>
@@ -106,15 +117,15 @@
                 </div>
 
                 <!-- Total e Botão Finalizar -->
-                <div class="pt-2">
-                    <div class="flex justify-between items-baseline mb-4">
+                <div class="pt-1">
+                    <div class="flex justify-between items-baseline mb-3">
                         <span class="text-gray-400 text-sm">TOTAL A PAGAR</span>
                         <span id="total-val" class="text-3xl font-extrabold text-emerald-400">R$ 0,00</span>
                     </div>
 
-                    <button onclick="finalizarVenda()" 
+                    <button type="button" onclick="finalizarVenda()" 
                             class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-emerald-900/20 active:scale-[0.98]">
-                        FINALIZAR VENDA (F9)
+                        FINALIZAR VENDA
                     </button>
                 </div>
             </div>
@@ -125,10 +136,12 @@
     <!-- Script JS do Carrinho do PDV -->
     <script>
         let carrinho = [];
-        const caixaId = "{{ caixa.id }}";
+        const caixaId = "{{ caixa.id|default:'' }}";
+        const csrfToken = "{{ csrf_token }}";
 
         function adicionarAoCarrinho(id, nome, preco, estoqueMax) {
             const item = carrinho.find(i => i.produto_id === id);
+
             if (item) {
                 if (item.quantidade < estoqueMax) {
                     item.quantidade++;
@@ -137,6 +150,26 @@
                 }
             } else {
                 carrinho.push({ produto_id: id, nome, preco, quantidade: 1, estoqueMax });
+            }
+            renderizarCarrinho();
+        }
+
+        function alterarQuantidade(id, novaQtd) {
+            const item = carrinho.find(i => i.produto_id === id);
+            if (!item) return;
+
+            let qtd = parseInt(novaQtd, 10);
+
+            if (isNaN(qtd) || qtd <= 0) {
+                removerDoCarrinho(id);
+                return;
+            }
+
+            if (qtd > item.estoqueMax) {
+                alert(`Estoque máximo disponível: ${item.estoqueMax}`);
+                item.quantidade = item.estoqueMax;
+            } else {
+                item.quantidade = qtd;
             }
             renderizarCarrinho();
         }
@@ -169,13 +202,26 @@
 
                 container.innerHTML += `
                     <div class="flex justify-between items-center bg-gray-800/80 p-3 rounded-lg border border-gray-700/50">
-                        <div class="flex-1">
+                        <div class="flex-1 pr-2">
                             <h4 class="font-medium text-sm text-gray-200">${i.nome}</h4>
-                            <span class="text-xs text-gray-400">${i.quantidade}x R$ ${i.preco.toFixed(2)}</span>
+                            <span class="text-xs text-gray-400">R$ ${i.preco.toFixed(2)} un.</span>
                         </div>
+                        
+                        <!-- Controle de Quantidade -->
+                        <div class="flex items-center gap-1 bg-gray-900 border border-gray-700 rounded-lg p-1 mr-3">
+                            <button type="button" onclick="alterarQuantidade(${i.produto_id}, ${i.quantidade - 1})" 
+                                    class="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-800 rounded font-bold">-</button>
+                            <input type="number" min="1" max="${i.estoqueMax}" value="${i.quantidade}" 
+                                   onchange="alterarQuantidade(${i.produto_id}, this.value)"
+                                   onkeydown="if(event.key==='Enter') alterarQuantidade(${i.produto_id}, this.value)"
+                                   class="w-12 text-center bg-transparent text-sm font-semibold text-emerald-400 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+                            <button type="button" onclick="alterarQuantidade(${i.produto_id}, ${i.quantidade + 1})" 
+                                    class="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-800 rounded font-bold">+</button>
+                        </div>
+
                         <div class="flex items-center gap-3">
-                            <span class="font-bold text-sm text-emerald-400">R$ ${subtotal.toFixed(2)}</span>
-                            <button onclick="removerDoCarrinho(${i.produto_id})" class="text-rose-400 hover:text-rose-300 text-xs font-bold px-1">✕</button>
+                            <span class="font-bold text-sm text-emerald-400 min-w-[70px] text-right">R$ ${subtotal.toFixed(2)}</span>
+                            <button type="button" onclick="removerDoCarrinho(${i.produto_id})" class="text-rose-400 hover:text-rose-300 text-xs font-bold px-1">✕</button>
                         </div>
                     </div>
                 `;
@@ -191,10 +237,19 @@
                 return;
             }
 
+            const clienteIdVal = document.getElementById('cliente-select').value;
+            const formaPagamentoVal = document.getElementById('pagamento-select').value;
+
+            if (formaPagamentoVal === 'fiado' && !clienteIdVal) {
+                alert("Atenção: Selecione um cliente cadastrado para realizar a venda na opção Fiado!");
+                return;
+            }
+
             const payload = {
                 caixa_id: parseInt(caixaId),
                 vendedor_id: parseInt(document.getElementById('vendedor-select').value),
-                forma_pagamento: document.getElementById('pagamento-select').value,
+                cliente_id: clienteIdVal ? parseInt(clienteIdVal) : null,
+                forma_pagamento: formaPagamentoVal,
                 itens: carrinho.map(i => ({ produto_id: i.produto_id, quantidade: i.quantidade }))
             };
 
@@ -202,7 +257,7 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}'
+                    'X-CSRFToken': csrfToken
                 },
                 body: JSON.stringify(payload)
             });
